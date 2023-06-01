@@ -1,0 +1,65 @@
+---
+title: "data explore l"
+author: "Lot Hernandez"
+output: html_document
+---
+
+# Llamar librerias
+```{r}
+library(ggplot2)  
+library(openintro)  
+library(bestNormalize)  
+library(predict3d) 
+```
+
+```{r}
+data = read.table("../data/heart_failure_clinical_records_dataset.csv",sep = ",",header = T)
+head(data)
+```
+
+```{r}
+arrM = c()
+arrV = c()
+
+for (x in colnames(data[c(2,4,6,10,11)])) {
+
+    arrM = append(arrM, c(sum(data[data$DEATH_EVENT == 1,][x]) / nrow(data[data$DEATH_EVENT == 1,])))
+    arrV = append(arrV, c(sum(data[data$DEATH_EVENT == 0,][x]) / nrow(data[data$DEATH_EVENT == 0,])))
+    }
+
+dfPerc = data.frame(arrM,arrV,colnames(data[c(2,4,6,10,11)]))
+rownames(dfPerc) =colnames(data[c(2,4,6,10,11)])
+colnames(dfPerc) = c('Murió', 'No Murió', 'Característica')
+```
+
+```{r}
+reshPerc = reshape(dfPerc, 
+        direction = "long", 
+        varying = list(names(dfPerc)[1:2]),
+        v.names = "Porcentaje",
+        idvar = "Característica", 
+        timevar = "Grupo", 
+        times = c("Murió", "No Murió"))
+
+```
+
+```{r}
+ggplot(reshPerc, aes(x = Característica, y = Porcentaje, fill = Grupo)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+     scale_x_discrete(labels = c("Anemia", "Diabetes", "Presion Sanguinea Alta", "Hombre", "Fumador"))
+```
+
+```{r}
+data$DEATH_EVENT <- as.factor(data$DEATH_EVENT)
+
+for (x in colnames(data[0:12])) {
+    ggplot(data, aes_string(x = 'DEATH_EVENT',y = x, color = 'DEATH_EVENT')) +
+    geom_boxplot() +
+    theme(legend.position = "none") +
+    labs(title = paste("Boxplot comparativo", x, "y Muerte"), x = "Muerte", y = x)+
+    scale_x_discrete(labels = c("No", "Sí"))
+    
+    ggsave(paste('plot',x,'.png', sep = ''), path='../plots/')
+}
+```
+

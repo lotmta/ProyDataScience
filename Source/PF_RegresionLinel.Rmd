@@ -17,39 +17,6 @@ data = read.table("../data/heart_failure_clinical_records_dataset.csv",sep = ","
 head(data)
 ```
 
-```{r}
-arrM = c()
-arrV = c()
-
-for (x in colnames(data[c(2,4,6,10,11)])) {
-
-    arrM = append(arrM, c(sum(data[data$DEATH_EVENT == 1,][x]) / nrow(data[data$DEATH_EVENT == 1,])))
-    arrV = append(arrV, c(sum(data[data$DEATH_EVENT == 0,][x]) / nrow(data[data$DEATH_EVENT == 0,])))
-    }
-
-dfPerc = data.frame(arrM,arrV,colnames(data[c(2,4,6,10,11)]))
-rownames(dfPerc) =colnames(data[c(2,4,6,10,11)])
-colnames(dfPerc) = c('Murió', 'No Murió', 'Característica')
-```
-
-```{r}
-reshPerc = reshape(dfPerc, 
-        direction = "long", 
-        varying = list(names(dfPerc)[1:2]),
-        v.names = "Porcentaje",
-        idvar = "Característica", 
-        timevar = "Grupo", 
-        times = c("Murió", "No Murió"))
-
-```
-
-```{r}
-ggplot(reshPerc, aes(x = Característica, y = Porcentaje, fill = Grupo)) +
-  geom_bar(stat = "identity", position=position_dodge()) +
-     scale_x_discrete(labels = c("Anemia", "Diabetes", "Presion Sanguinea Alta", "Hombre", "Fumador"))
-```
-
-
 # Regresion Logistica
 ## Usando todas las caracteristicas
 ```{r}

@@ -1,0 +1,127 @@
+---
+title: "Exploracion de datos"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+## Lectura de datos
+```{r}
+# Leer el archivo
+cardDis <- read.table("../heart_failure_clinical_records_dataset.csv",sep = ",",header = T)
+
+```
+
+## Explorar los datos
+```{r}
+#el parametro n es el numero registros que nos va a mostrar
+head(cardDis,n = 6)
+
+```
+
+## Dimension de los datos
+Para observar las dimensiones de nuestros datos podemos utilizar las funciones dim() o nrow() y ncol().
+```{r}
+dim(cardDis)
+#numero de registros 
+nrow(cardDis)
+#numero de caracterisiticas 
+ncol(cardDis)
+
+#nombre de las caracterisiticas
+colnames(cardDis)
+```
+
+## Balance de los datos
+Podemos utilizar la función table() para contabilizar cuántos registros de cada clase tenemos. 
+```{r}
+deathEvent <- table(cardDis$DEATH_EVENT)
+deathEvent
+# Convertimos a DF para poder graficar
+deathEvent <- as.data.frame(deathEvent)
+```
+
+# visualizar los datos de la variable  principal
+```{r}
+library(ggplot2)
+#Girando la grafica con coord_flip() y eliminando la leyenda con theme()
+ggplot(deathEvent, aes(x = Var1, y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") + 
+   scale_x_discrete(labels = c("no", "si")) +
+  labs(title = "Pacientes que murieron", y = "Número de pacientes", x = 'Muerte')
+```
+
+# Separación de los datos
+Generamos 2 conjuntos de datos uno para los que murieron y otro para los que no m
+```{r}
+death.yes<-cardDis[cardDis$DEATH_EVENT==1,]
+dim(death.yes)
+#La diferencia entre usar which retorna los indices que cumplen la condicion y el otro es un vector booleano
+death.no<-cardDis[which(cardDis$DEATH_EVENT==0),]
+dim(death.no)
+```
+
+# Estadistica descriptiva
+# Medidas de tendencia central
+```{r}
+# Para personas que no murieron
+summary(death.no$age)
+summary(death.no$creatinine_phosphokinase)
+summary(death.no$ejection_fraction)
+summary(death.no$platelets)
+summary(death.no$serum_creatinine)
+summary(death.no$serum_sodium)
+summary(death.no$time)
+
+# Para los que si murieron
+summary(death.yes$age)
+summary(death.yes$creatinine_phosphokinase)
+summary(death.yes$ejection_fraction)
+summary(death.yes$platelets)
+summary(death.yes$serum_creatinine)
+summary(death.yes$serum_sodium)
+summary(death.yes$time)
+```
+
+# Desviacion std y covarianza 
+# Varianza
+```{r}
+# Varianza de personas que desafortunadamente fallecieron
+varvect.death.yes<- vector(mode="numeric", length=0)
+for (x in colnames(death.yes[c(1,3,5,7,8,9,12)])) {
+  varianza <- var(death.yes[,x])
+  varvect.death.yes<- append(varvect.death.yes, varianza)
+}
+as.data.frame(format(varvect.death.yes, scientific = F))
+
+# Varianza de personas que la libraron
+varvect.death.no<- vector(mode="numeric", length=0)
+for (x in colnames(death.no[c(1,3,5,7,8,9,12)])) {
+  varianza <- var(death.no[,x])
+  varvect.death.no<- append(varvect.death.no, varianza)
+}
+as.data.frame(format(varvect.death.no, scientific = F))
+```
+
+# Desviacion estandar
+```{r}
+# Personas que fallecieron
+sdvect.death.yes<- vector(mode="numeric", length=0)
+for (x in colnames(death.yes[c(1,3,5,7,8,9,12)])) {
+  sd <- sd(death.yes[,x])
+  sdvect.death.yes<- append(sdvect.death.yes, sd)
+}
+as.data.frame(format(sdvect.death.yes, scientific = F))
+
+# Personas que no fallecieron
+sdvect.death.no <- vector(mode="numeric", length=0)
+for (x in colnames(death.yes[c(1,3,5,7,8,9,12)])) {
+  sd <- sd(death.no[,x])
+  sdvect.death.no <- append(sdvect.death.no, sd)
+}
+as.data.frame(format(sdvect.death.no, scientific = F))
+```
+
+
+

@@ -1,0 +1,122 @@
+---
+title: "RegresionLineal"
+author: "Lot Hernandez"
+output: html_document
+---
+
+# Llamar librerias
+```{r}
+library(ggplot2)  
+library(openintro)  
+library(bestNormalize)  
+library(predict3d) 
+```
+
+```{r}
+data = read.table("../data/heart_failure_clinical_records_dataset.csv",sep = ",",header = T)
+head(data)
+```
+
+```{r}
+arrM = c()
+arrV = c()
+
+for (x in colnames(data[c(2,4,6,10,11)])) {
+
+    arrM = append(arrM, c(sum(data[data$DEATH_EVENT == 1,][x]) / nrow(data[data$DEATH_EVENT == 1,])))
+    arrV = append(arrV, c(sum(data[data$DEATH_EVENT == 0,][x]) / nrow(data[data$DEATH_EVENT == 0,])))
+    }
+
+dfPerc = data.frame(arrM,arrV,colnames(data[c(2,4,6,10,11)]))
+rownames(dfPerc) =colnames(data[c(2,4,6,10,11)])
+colnames(dfPerc) = c('Murió', 'No Murió', 'Característica')
+```
+
+```{r}
+reshPerc = reshape(dfPerc, 
+        direction = "long", 
+        varying = list(names(dfPerc)[1:2]),
+        v.names = "Porcentaje",
+        idvar = "Característica", 
+        timevar = "Grupo", 
+        times = c("Murió", "No Murió"))
+
+```
+
+```{r}
+ggplot(reshPerc, aes(x = Característica, y = Porcentaje, fill = Grupo)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+     scale_x_discrete(labels = c("Anemia", "Diabetes", "Presion Sanguinea Alta", "Hombre", "Fumador"))
+```
+
+
+# Regresion Logistica
+## Usando todas las caracteristicas
+```{r}
+data$DEATH_EVENT <- as.factor(data$DEATH_EVENT)
+```
+
+```{r}
+# Datos de entrenamiento separación de datos
+set.seed(10)
+indic <- sample(1:nrow(data), 0.7 * nrow(data))
+entrenamiento <- data[indic, ]
+prueba <- data[-indic, ]
+
+```
+
+```{r}
+model <- glm(DEATH_EVENT ~ age + anaemia + creatinine_phosphokinase + diabetes + 
+             ejection_fraction + high_blood_pressure + platelets + serum_creatinine + 
+             serum_sodium + sex + smoking, data = entrenamiento, family = binomial)
+summary(model)
+```
+```{r}
+regPval = data.frame(1 - summary(model)$coefficients[, "Pr(>|z|)"])
+colnames(regPval) =c('pvalue')
+regPval$categ = rownames(regPval)
+
+ggplot(regPval, aes(x = categ, y = pvalue)) +
+  geom_bar(stat = "identity") +
+    labs(title = 'Complemento de p-value regresion', x = 'Caracteristica', y= "1 - pvalue")
+```
+
+
+```{r}
+predicted <- predict(model, newdata = prueba, type = "response")
+```
+
+```{r}
+predicted_labels <- ifelse(predicted >= 0.5, 1, 0)
+accuracy <- sum(predicted_labels == prueba$DEATH_EVENT) / nrow(prueba)
+accuracy
+```
+
+## Con nuestras caracteristicas selectas
+
+```{r}
+# Seleccionamos solo nuestras caracteristicas de interes
+dataInt = data[c(1,5,8,9,13)]
+
+indic <- sample(1:nrow(dataInt), 0.7 * nrow(dataInt))
+entrenamiento <- dataInt[indic, ]
+prueba <- dataInt[-indic, ]
+```
+
+
+```{r}
+model <- glm(DEATH_EVENT ~ age + ejection_fraction +serum_creatinine + 
+             serum_sodium, data = entrenamiento, family = binomial)
+summary(model)
+```
+```{r}
+predicted <- predict(model, newdata = prueba, type = "response")
+```
+
+```{r}
+predicted_labels <- ifelse(predicted >= 0.5, 1, 0)
+accuracy <- sum(predicted_labels == prueba$DEATH_EVENT) / nrow(prueba)
+accuracy
+```
+```
+

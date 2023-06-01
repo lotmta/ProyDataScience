@@ -1,0 +1,156 @@
+---
+title: "Inferencia estadistica"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+Con este analisis buscamos determinar si  
+
+
+# Consideraciones previas
+## Normalidad de los datos 
+Para las variables cuantitativas (las 5, quitando al tiempo por carecer de sentido), determinamos si cumplen con las condiciones de normalidad por medio de un qq-plot
+
+```{r}
+# Leer los datos
+library(gridExtra)
+cardDis <- read.table("../heart_failure_clinical_records_dataset.csv",sep = ",",header = T)
+# Personas que murieron y no murieron
+death.no <- cardDis[cardDis$DEATH_EVENT == 0,]
+death.yes <- cardDis[cardDis$DEATH_EVENT == 1,]
+head(death.yes)
+
+# Accedemos a las variables cuantitativas de cada uno de los set de datos (muerte y no muerte)
+# Hacemos qqplots
+dfDeath <- data.frame(death.yes[,"age"])
+p1 <-ggplot(dfDeath, aes(sample = death.yes[,"age"])) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = 'edad',x = 'cuantil teorico', y = 'cuantil de la muestra')
+# qqplot creatinina p
+dfDeath <- data.frame(death.yes$creatinine_phosphokinase)
+p2 <- ggplot(dfDeath, aes(sample = death.yes$creatinine_phosphokinase)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Creatinina PK",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.yes$ejection_fraction)
+p3 <- ggplot(dfDeath, aes(sample = death.yes$ejection_fraction)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Fraccion de eyeccion",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.yes$serum_creatinine)
+p4 <- ggplot(dfDeath, aes(sample = death.yes$serum_creatinine)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Creatinina en suero",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.yes$platelets)
+p5 <- ggplot(dfDeath, aes(sample = death.yes$platelets)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "plaquetas",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.yes$serum_sodium)
+p6 <- ggplot(dfDeath, aes(sample = death.yes$serum_sodium)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "sodio en suero",x = 'cuantil teorico', y = 'cuantil de la muestra')
+plots <- list(p1,p2,p3,p4,p5,p6)
+grid.arrange(grobs = plots,ncol=3)
+```
+
+
+```{r}
+# qqplots de pacientes que no murieron
+dfDeath <- data.frame(death.no[,"age"])
+p1 <-ggplot(dfDeath, aes(sample = death.no[,"age"])) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = 'edad',x = 'cuantil teorico', y = 'cuantil de la muestra')
+# qqplot creatinina p
+dfDeath <- data.frame(death.no$creatinine_phosphokinase)
+p2 <- ggplot(dfDeath, aes(sample = death.no$creatinine_phosphokinase)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Creatinina PK",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.no$ejection_fraction)
+p3 <- ggplot(dfDeath, aes(sample = death.no$ejection_fraction)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Fraccion de eyeccion",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.no$serum_creatinine)
+p4 <- ggplot(dfDeath, aes(sample = death.no$serum_creatinine)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "Creatinina en suero",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.no$platelets)
+p5 <- ggplot(dfDeath, aes(sample = death.no$platelets)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "plaquetas",x = 'cuantil teorico', y = 'cuantil de la muestra')
+dfDeath <- data.frame(death.no$serum_sodium)
+p6 <- ggplot(dfDeath, aes(sample = death.no$serum_sodium)) + 
+  stat_qq(col ='green') + stat_qq_line(col = "blue") + 
+  labs(title = "sodio en suero",x = 'cuantil teorico', y = 'cuantil de la muestra')
+plots <- list(p1,p2,p3,p4,p5,p6)
+grid.arrange(grobs = plots,ncol=3)
+```
+
+Vemos que las variables cuantitativas no tienen una distribucion normal. Sin embargo valdria la pena aplicar un test, tal como el Llillie test. En dicho test, la hipotesis nula (H0) es que los datos no siguen una distribucion normal. Por lo anterior, valores-p abajo de 1e-5 permiten rechazar que no se sigue una distribucion normal.
+```{r}
+library(nortest)
+# Para eventos de no muerte
+for (x in colnames(death.no[c(1,3,5,7,8,9)])) {
+  print(x)
+  print(lillie.test(death.no[,x]))
+}
+
+# Para eventos de muerte
+for (x in colnames(death.yes[c(1,3,5,7,8,9)])) {
+  print(x)
+  print(lillie.test(death.yes[,x]))
+}
+
+```
+
+Los p-values obtenidos permiten confirmar lo que se observa tambien en los qq-plots: los datos no siguen una distribucion normal.
+Ahora que sabemos que las variables de los dos grupos no siguen distribuciones normales, determinamos la aplicacion de pruebas no parametricas. Cabe destacar que tambien podriamos comprobar si la varianza es homogénea (homocedasticidad).
+
+```{r}
+# Test de levene
+library(car)
+
+for (x in colnames(death.no[c(1,3,5,7,8,9)])) {
+  dfdeath <- data.frame(c(death.no[,x],death.yes[,x]), rep(x = c("no", "si"), c(203,96)))
+  colnames(dfdeath) <- c("x", "grupo")
+  print(x)
+  print(leveneTest(y = dfdeath$x, group = dfdeath$grupo, center = "median"))
+}
+
+
+```
+Vemos que en el caso de la edad, la creatinina en suero y el sodio en suero podemos descartar la H0 de que tienen una varianza homogenea. En el caso de las demas variables no.
+
+# Pruebas parametricas
+Como vimos, los datos no siguen una distribucion normal y solo algunos cumplen con la homocedasticidad. Por lo anterior, las pruebas no parametricas parecen las mas indicadas. Tambien, sabemos que los datos son independientes, por lo que conviene Wilcoxon Rank Sum
+
+```{r}
+#tambien recibe los 2 conjuntos de datos X, Y 
+
+for (x in colnames(death.no[c(1,3,5,7,8,9)])) {
+  print(x)
+  print(wilcox.test(death.no[,x],death.yes[,x], alternative = "two.sided", mu = 0,
+            paired = FALSE, conf.int = 0.95))
+}
+
+```
+
+En este caso, la H0 indica que los niveles de los dos grupos comparados son similares. Las variables en las que podemos rechazar la hipotesis nula, por tener un p-value < 0.05, son la edad, fraccion de eyeccion, creatinina en suero y sodio en suero. Por lo tanto, estas varibles presentan diferencias significativas en las personas que mueren y en las que no.
+
+
+# Para las caracteristicas binarias realizamos una prueba de CHi square 
+La prueba de independencia de Chi-square asume como hipotesis nula (H0) que las variables son independientes, es decir, que no estan relacionadas entre si. En nuestro caso, buscamos saber si la muerte esta relacionada con alguna de las caracteristicas binarias.
+
+```{r}
+# Aplicamos el test de Chi-square para todas las caracteristicas binarias clasificandolas por el estado muerte o no muerte
+
+for (x in colnames(death.no[c(2,4,6,10,11)])) {
+  print(x)
+  dftable <- data.frame(matrix(nrow = 2, ncol = 2), row.names = c("no char", "char"))
+  dftable[,1] <- table(death.no[,x])
+  dftable[,2] <- table(death.yes[,x])
+  colnames(dftable) <- c("no murieron", "murieron")
+  print(chisq.test(dftable))
+}
+```
+Vemos que el p-value de ninguna caracteristica es < 0.05, por lo que no podemos descartar la hipotesis nula, es decir, las caracteristicas no estan relacionadas con el estado de muerte o no muerte.
+
+
